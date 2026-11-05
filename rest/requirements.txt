@@ -1,0 +1,5 @@
+flask>=3.0,<4
+redis>=5,<8
+minio>=7.2,<8
+requests>=2.31,<3
+jsonpickle>=3,<5

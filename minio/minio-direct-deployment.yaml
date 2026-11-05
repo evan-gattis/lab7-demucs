@@ -1,0 +1,77 @@
+# Lab 7 local-development MinIO deployment (no Helm required).
+# Run after: helm uninstall minio-proj -n minio-ns
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minio-ns
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio-proj
+  namespace: minio-ns
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: minio-proj
+  template:
+    metadata:
+      labels:
+        app: minio-proj
+    spec:
+      containers:
+        - name: minio
+          # Public mirror of the last precompiled MinIO community image.
+          # For LOCAL COURSEWORK only; this is no longer maintained.
+          image: public.ecr.aws/y9w4h2u9/minio:RELEASE.2025-09-07T16-13-09Z
+          imagePullPolicy: IfNotPresent
+          args:
+            - server
+            - /data
+            - --console-address
+            - ':9001'
+          env:
+            - name: MINIO_ROOT_USER
+              value: rootuser
+            - name: MINIO_ROOT_PASSWORD
+              value: rootpass123
+          ports:
+            - name: api
+              containerPort: 9000
+            - name: console
+              containerPort: 9001
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: api
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: 512Mi
+          volumeMounts:
+            - name: minio-data
+              mountPath: /data
+      volumes:
+        - name: minio-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-proj
+  namespace: minio-ns
+spec:
+  selector:
+    app: minio-proj
+  ports:
+    - name: api
+      port: 9000
+      targetPort: api
+    - name: console
+      port: 9001
+      targetPort: console
+  type: ClusterIP
