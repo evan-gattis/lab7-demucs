@@ -1,0 +1,47 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demucs-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demucs-worker
+  template:
+    metadata:
+      labels:
+        app: demucs-worker
+    spec:
+      containers:
+        - name: demucs-worker
+          image: demucs-worker:v1
+          imagePullPolicy: Never
+
+          env:
+            - name: REDIS_HOST
+              value: "redis.default.svc.cluster.local"
+            - name: REDIS_PORT
+              value: "6379"
+
+            - name: MINIO_ENDPOINT
+              value: "minio-proj.minio-ns.svc.cluster.local:9000"
+
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: worker-minio
+                  key: access-key
+
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: worker-minio
+                  key: secret-key
+
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "500m"
+            limits:
+              memory: "8Gi"
